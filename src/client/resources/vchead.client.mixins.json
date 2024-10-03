@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"package": "com.vchead.mixin.client",
+	"compatibilityLevel": "JAVA_21",
+	"client": [
+		"BipedEntityModelMixin",
+		"PlayerEntityMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
