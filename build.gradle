@@ -4,7 +4,6 @@ plugins {
 }
 
 version = project.mod_version
-group = project.maven_group
 
 base {
 	archivesName = project.archives_base_name
@@ -26,6 +25,11 @@ repositories {
 			includeGroup "maven.modrinth"
 		}
 	}
+
+	// Mod menu
+	maven { url "https://maven.terraformersmc.com/releases/" }
+	// YACL
+	maven { url "https://maven.isxander.dev/releases" }
 }
 
 loom {
@@ -49,8 +53,11 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-	modImplementation "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}"
+	implementation "de.maxhenkel.voicechat:voicechat-api:${voicechat_api_version}"
 	modImplementation "maven.modrinth:simple-voice-chat:fabric-${voicechat_version}"
+	modImplementation("com.terraformersmc:modmenu:${project.modmenu_version}")
+
+	modImplementation "dev.isxander:yet-another-config-lib:${project.yacl_version}"
 }
 
 processResources {

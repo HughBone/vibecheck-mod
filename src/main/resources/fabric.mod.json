@@ -1,9 +1,9 @@
 {
 	"schemaVersion": 1,
-	"id": "vchead",
+	"id": "vibecheck",
 	"version": "${version}",
-	"name": "Voice Chat Head",
-	"description": "player heads move to voice chat audio",
+	"name": "Vibe Check",
+	"description": "Things scale to voice chat audio level",
 	"authors": [
 		"HughBone"
 	],
@@ -12,23 +12,27 @@
 		"sources": "https://github.com/FabricMC/fabric-example-mod"
 	},
 	"license": "CC0-1.0",
-	"icon": "assets/modid/icon.png",
+	"icon": "assets/vibecheck/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"voicechat": [
-			"com.vchead.VoiceChatHead"
-		]
+          "com.vibecheck.VibeCheck"
+        ],
+		"modmenu": [
+          "com.vibecheck.integration.ModMenu"
+        ]
 	},
 	"mixins": [
 		{
-			"config": "vchead.client.mixins.json",
+			"config": "vibecheck.client.mixins.json",
 			"environment": "client"
 		}
 	],
 	"depends": {
 		"fabricloader": ">=0.16.2",
 		"minecraft": "~1.21.1",
-		"java": ">=21"
+		"java": ">=21",
+		"yet_another_config_lib_v3": "*"
 	},
 	"suggests": {
 		"another-mod": "*"
