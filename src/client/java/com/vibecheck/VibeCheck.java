@@ -13,6 +13,7 @@ import java.time.Instant;
 
 public class VibeCheck implements VoicechatPlugin {
 
+    public static int timeSinceLastRender = 0;
     public static boolean lockRender = false;
 
     @Override
@@ -31,6 +32,7 @@ public class VibeCheck implements VoicechatPlugin {
         registration.registerEvent(ClientSoundEvent.class, this::clientSoundEvent);
     }
 
+    // Other players
     public void clientReceiveSound(ClientReceiveSoundEvent.EntitySound event) {
         if (MinecraftClient.getInstance().world == null) return;
 
@@ -42,7 +44,6 @@ public class VibeCheck implements VoicechatPlugin {
 
         ((PlayerInterface) player).queueAdd(audioLevel, Instant.now().toEpochMilli() + 100);
     }
-
 
     // Client only
     public void clientSoundEvent(ClientSoundEvent event) {

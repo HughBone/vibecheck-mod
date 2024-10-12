@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.Unique;
 
 import java.time.Instant;
 import java.util.LinkedList;
+import java.util.NoSuchElementException;
 import java.util.Queue;
 
 @Mixin(PlayerEntity.class)
@@ -23,9 +24,15 @@ public class PlayerEntityMixin implements PlayerInterface {
     @Unique
     private boolean shouldRender = false;
 
+    @Unique
+    private float grewByValue = 0.0f;
+
+    // About 60fps
+    private float currentDelay = 16;
+
     @Override
     public void setCurrentScale() {
-        if (VibeCheck.lockRender || !this.shouldRender) {
+        if (VibeCheck.timeSinceLastRender < currentDelay || VibeCheck.lockRender || !this.shouldRender) {
             return;
         }
         // Only cancel renderUpdate after we have had the reset to 1.0f render
@@ -35,14 +42,36 @@ public class PlayerEntityMixin implements PlayerInterface {
         }
 
         VibeCheck.lockRender = true;
+        VibeCheck.timeSinceLastRender = 0;
 
         if (scaleQueue.isEmpty()) {
             if (Instant.now().toEpochMilli() > this.lastUpdateTime) {
-                this.currentScale = 1.0f;
-                this.hadResetRender = true;
+                this.currentScale -= 0.05f;
+                if (currentScale <= 1.0f) {
+                    currentScale = 1.0f;
+                    this.hadResetRender = true;
+                }
             }
         } else {
-            this.currentScale = scaleQueue.remove();
+            float newScale;
+            try {
+                newScale = scaleQueue.remove();
+            } catch (NoSuchElementException e) {
+                System.out.println("Failed the vibe check - NoSuchElementException");
+                return;
+            }
+            this.grewByValue = newScale - currentScale;
+
+            if (Math.abs(grewByValue) > 0.15) {
+                if (grewByValue > 0) {
+                    grewByValue = 0.15f;
+                } else {
+                    grewByValue = -0.15f;
+                }
+                currentScale += grewByValue;
+            } else {
+                currentScale = newScale;
+            }
         }
     }
 
@@ -62,8 +91,15 @@ public class PlayerEntityMixin implements PlayerInterface {
         this.hadResetRender = false;
         this.lastUpdateTime = time;
 
-        if (scaleQueue.size() < 4) {
+        if (scaleQueue.size() < 3) {
             scaleQueue.add(audioScale);
+        } else {
+            try {
+                scaleQueue.clear();
+                scaleQueue.add(audioScale);
+            } catch (Exception e) {
+                System.out.println("Failed the vibe check - NoSuchElementException PART 2");
+            }
         }
     }
 
