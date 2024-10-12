@@ -18,9 +18,6 @@ public abstract class HeldItemRendererMixin {
     @Inject(method = "renderFirstPersonItem", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/util/math/MatrixStack;push()V", shift = At.Shift.AFTER))
     private void renderFirstPersonItem(AbstractClientPlayerEntity player, float tickDelta, float pitch, Hand hand, float swingProgress, ItemStack item, float equipProgress, MatrixStack matrices, VertexConsumerProvider vertexConsumers, int light, CallbackInfo ci) {
         float currentScale = ((PlayerInterface) player).getCurrentScale();
-        if (currentScale == -1) {
-            return;
-        }
 
         float newScale = (currentScale - 1.0f) / 2.5f;
 

@@ -3,6 +3,7 @@ package com.vibecheck.mixin.client;
 import com.vibecheck.PlayerInterface;
 import net.minecraft.entity.player.PlayerEntity;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 
 import java.time.Instant;
@@ -12,56 +13,48 @@ import java.util.Queue;
 
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin implements PlayerInterface {
+    @Shadow public abstract String getNameForScoreboard();
+
     @Unique
     private Queue<Float> scaleQueue = new LinkedList<>();
     @Unique
     private long resetScaleTime = Long.MAX_VALUE;
     @Unique
     private float currentScale = 1.0f;
-    @Unique
-    private boolean hadResetRender = false;
-    @Unique
-    private boolean shouldRender = false;
 
+    // Delay of 16 is about 60fps
     @Unique
-    private float grewByValue = 0.0f;
-
-    // About 60fps
     private static final float DELAY = 16;
-
+    @Unique
     private long prevRenderTime = 0;
-
-    // Prevent removing from queue twice
-    private boolean lockRender = false;
+    // Prevent removing from queue twice in one render for this player
+    @Unique
+    private boolean lockScaleUpdate = false;
 
     @Override
     public void clearLockRender() {
-        lockRender = false;
+        lockScaleUpdate = false;
     }
 
     @Override
     public void setCurrentScale() {
-        if ((Instant.now().toEpochMilli() - prevRenderTime) < DELAY || lockRender || !shouldRender) {
-            return;
-        }
-        // Only cancel renderUpdate after we have had the reset to 1.0f render
-        if (this.hadResetRender) {
-            this.shouldRender = false;
+        if (lockScaleUpdate || (Instant.now().toEpochMilli() - prevRenderTime) < DELAY) {
             return;
         }
 
-        lockRender = true;
-        prevRenderTime = Instant.now().toEpochMilli();
+        // Lock until next render frame
+        lockScaleUpdate = true;
 
         if (scaleQueue.isEmpty()) {
-            if (Instant.now().toEpochMilli() > this.resetScaleTime) {
+            if (currentScale != 1.0f && Instant.now().toEpochMilli() > this.resetScaleTime) {
                 this.currentScale -= 0.05f;
-                if (currentScale <= 1.0f) {
+                if (currentScale < 1.0f) {
                     currentScale = 1.0f;
-                    this.hadResetRender = true;
                 }
+                prevRenderTime = Instant.now().toEpochMilli();
             }
         } else {
+            prevRenderTime = Instant.now().toEpochMilli();
             float newScale;
             try {
                 newScale = scaleQueue.remove();
@@ -69,15 +62,15 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
                 System.out.println("Failed the vibe check - NoSuchElementException");
                 return;
             }
-            this.grewByValue = newScale - currentScale;
 
+            // Smooth jittery scaling / cap value
+            float grewByValue = newScale - currentScale;
             if (Math.abs(grewByValue) > 0.15) {
                 if (grewByValue > 0) {
-                    grewByValue = 0.15f;
+                    currentScale += 0.15f;
                 } else {
-                    grewByValue = -0.15f;
+                    currentScale -= 0.15f;
                 }
-                currentScale += grewByValue;
             } else {
                 currentScale = newScale;
             }
@@ -86,23 +79,18 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
 
     @Override
     public float getCurrentScale() {
-        if (!this.shouldRender) {
-            return -1;
-        }
-
         setCurrentScale();
         return currentScale;
     }
 
     @Override
     public void queueAdd(float audioScale, long time) {
-        this.shouldRender = true;
-        this.hadResetRender = false;
         this.resetScaleTime = time;
 
         if (scaleQueue.size() < 3) {
             scaleQueue.add(audioScale);
         } else {
+            // Framerate too slow! Clear queue and start at new scale
             try {
                 scaleQueue.clear();
                 scaleQueue.add(audioScale);

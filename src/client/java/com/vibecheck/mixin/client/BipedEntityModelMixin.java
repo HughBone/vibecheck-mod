@@ -22,13 +22,12 @@ public abstract class BipedEntityModelMixin<T extends LivingEntity> {
     public void animateModel(T livingEntity, float f, float g, float h, CallbackInfo ci) {
         if (MyConfig.scaleHeadToSound && livingEntity instanceof PlayerEntity player) {
             float currentScale = ((PlayerInterface) player).getCurrentScale();
-            if (currentScale == -1) {
-                return;
-            }
             ModelPart head = this.getHead();
-            head.xScale = currentScale;
-            head.yScale = currentScale;
-            head.zScale = currentScale;
+            if (currentScale != head.xScale) {
+                head.xScale = currentScale;
+                head.yScale = currentScale;
+                head.zScale = currentScale;
+            }
         }
     }
 
