@@ -13,9 +13,6 @@ import java.time.Instant;
 
 public class VibeCheck implements VoicechatPlugin {
 
-    public static int timeSinceLastRender = 0;
-    public static boolean lockRender = false;
-
     @Override
     public String getPluginId() {
         return "vibecheck";

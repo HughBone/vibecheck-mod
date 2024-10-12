@@ -1,7 +1,6 @@
 package com.vibecheck.mixin.client;
 
 import com.vibecheck.PlayerInterface;
-import com.vibecheck.VibeCheck;
 import net.minecraft.entity.player.PlayerEntity;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
@@ -12,11 +11,11 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 
 @Mixin(PlayerEntity.class)
-public class PlayerEntityMixin implements PlayerInterface {
+public abstract class PlayerEntityMixin implements PlayerInterface {
     @Unique
     private Queue<Float> scaleQueue = new LinkedList<>();
     @Unique
-    private long lastUpdateTime = Long.MAX_VALUE;
+    private long resetScaleTime = Long.MAX_VALUE;
     @Unique
     private float currentScale = 1.0f;
     @Unique
@@ -28,11 +27,21 @@ public class PlayerEntityMixin implements PlayerInterface {
     private float grewByValue = 0.0f;
 
     // About 60fps
-    private float currentDelay = 16;
+    private static final float DELAY = 16;
+
+    private long prevRenderTime = 0;
+
+    // Prevent removing from queue twice
+    private boolean lockRender = false;
+
+    @Override
+    public void clearLockRender() {
+        lockRender = false;
+    }
 
     @Override
     public void setCurrentScale() {
-        if (VibeCheck.timeSinceLastRender < currentDelay || VibeCheck.lockRender || !this.shouldRender) {
+        if ((Instant.now().toEpochMilli() - prevRenderTime) < DELAY || lockRender || !shouldRender) {
             return;
         }
         // Only cancel renderUpdate after we have had the reset to 1.0f render
@@ -41,11 +50,11 @@ public class PlayerEntityMixin implements PlayerInterface {
             return;
         }
 
-        VibeCheck.lockRender = true;
-        VibeCheck.timeSinceLastRender = 0;
+        lockRender = true;
+        prevRenderTime = Instant.now().toEpochMilli();
 
         if (scaleQueue.isEmpty()) {
-            if (Instant.now().toEpochMilli() > this.lastUpdateTime) {
+            if (Instant.now().toEpochMilli() > this.resetScaleTime) {
                 this.currentScale -= 0.05f;
                 if (currentScale <= 1.0f) {
                     currentScale = 1.0f;
@@ -89,7 +98,7 @@ public class PlayerEntityMixin implements PlayerInterface {
     public void queueAdd(float audioScale, long time) {
         this.shouldRender = true;
         this.hadResetRender = false;
-        this.lastUpdateTime = time;
+        this.resetScaleTime = time;
 
         if (scaleQueue.size() < 3) {
             scaleQueue.add(audioScale);
