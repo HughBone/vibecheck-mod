@@ -6,7 +6,8 @@
     "BipedEntityModelMixin",
     "HeldItemRendererMixin",
     "MinecraftClientMixin",
-    "PlayerEntityMixin"
+    "PlayerEntityMixin",
+    "PlayerEntityRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1
