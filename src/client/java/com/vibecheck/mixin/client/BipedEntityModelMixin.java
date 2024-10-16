@@ -51,7 +51,7 @@ public abstract class BipedEntityModelMixin<T extends LivingEntity> {
                 }
             }
 
-            if ( !(MinecraftClient.getInstance().player == player
+            if (currentScale != 1.0f && !(MinecraftClient.getInstance().player == player
                     && MinecraftClient.getInstance().options.getPerspective().isFirstPerson())
             ) {
                 if (MyConfig.chicken) {
@@ -59,7 +59,7 @@ public abstract class BipedEntityModelMixin<T extends LivingEntity> {
                     rightArm.roll += (currentScale - 1.0f);
                 }
                 if (MyConfig.canada) {
-                    head.pivotY -= (currentScale - 1.0f) * 10;
+                    head.pivotY -= (currentScale - 1.0f) * 10f;
                 }
             }
         }

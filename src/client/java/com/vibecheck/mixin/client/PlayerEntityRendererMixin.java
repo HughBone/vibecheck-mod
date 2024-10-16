@@ -2,6 +2,7 @@ package com.vibecheck.mixin.client;
 
 import com.vibecheck.PlayerInterface;
 import com.vibecheck.integration.MyConfig;
+import com.vibecheck.integration.SquashAndStretchEnum;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
 import net.minecraft.client.render.VertexConsumerProvider;
 import net.minecraft.client.render.entity.EntityRendererFactory;
@@ -27,23 +28,24 @@ public abstract class PlayerEntityRendererMixin extends LivingEntityRenderer<Abs
         matrixStack.push();
 
         float currentScale = ((PlayerInterface) abstractClientPlayerEntity).getCurrentScale();
-        float newScale = (currentScale - 1.0f) / 2.5f;
+        currentScale = (currentScale - 1.0f) / 2.5f;
 
         // Stretch
-        if (MyConfig.stretch) {
-            matrixStack.scale(
-                1.0f - newScale,
-                1.0f + newScale,
-                1.0f - newScale
-            );
-        }
-        // Squash
-        else if (MyConfig.squash) {
-            matrixStack.scale(
-                1.0f + newScale,
-                1.0f - newScale,
-                1.0f + newScale
-            );
+        switch (MyConfig.squashAndStretch) {
+            case SquashAndStretchEnum.SQUASH:
+                matrixStack.scale(
+                        1.0f + currentScale,
+                        1.0f - currentScale,
+                        1.0f + currentScale
+                );
+                break;
+            case SquashAndStretchEnum.STRETCH:
+                matrixStack.scale(
+                        1.0f - currentScale,
+                        1.0f + currentScale,
+                        1.0f - currentScale
+                );
+                break;
         }
     }
 

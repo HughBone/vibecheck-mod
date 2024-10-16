@@ -1,9 +1,11 @@
 package com.vibecheck.mixin.client;
 
 import com.vibecheck.PlayerInterface;
+import com.vibecheck.VibeCheck;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.math.MathHelper;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 
 import java.time.Instant;
@@ -13,7 +15,6 @@ import java.util.Queue;
 
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin implements PlayerInterface {
-    @Shadow public abstract String getNameForScoreboard();
 
     @Unique
     private Queue<Float> scaleQueue = new LinkedList<>();
@@ -21,10 +22,12 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
     private long resetScaleTime = Long.MAX_VALUE;
     @Unique
     private float currentScale = 1.0f;
+    @Unique
+    private float prevScale = 1.0f;
 
     // Delay of 16 is about 60fps
     @Unique
-    private static final float DELAY = 16;
+    private static final float DELAY = 16.0f;
     @Unique
     private long prevRenderTime = 0;
     // Prevent removing from queue twice in one render for this player
@@ -38,7 +41,13 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
 
     @Override
     public void setCurrentScale() {
-        if (lockScaleUpdate || (Instant.now().toEpochMilli() - prevRenderTime) < DELAY) {
+        if (lockScaleUpdate) {
+            return;
+        }
+
+        if ((Instant.now().toEpochMilli() - prevRenderTime) < DELAY) {
+            float tickDelta = MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(true);
+            prevScale = MathHelper.lerp(tickDelta * VibeCheck.audioTickDelta, prevScale, currentScale);
             return;
         }
 
@@ -47,6 +56,7 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
 
         if (scaleQueue.isEmpty()) {
             if (currentScale != 1.0f && Instant.now().toEpochMilli() > this.resetScaleTime) {
+                prevScale = currentScale;
                 this.currentScale -= 0.05f;
                 if (currentScale < 1.0f) {
                     currentScale = 1.0f;
@@ -63,6 +73,8 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
                 return;
             }
 
+            prevScale = currentScale;
+
             // Smooth jittery scaling / cap value
             float grewByValue = newScale - currentScale;
             if (Math.abs(grewByValue) > 0.15) {
@@ -75,12 +87,20 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
                 currentScale = newScale;
             }
         }
+
+        float tickDelta = MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(true);
+        prevScale = MathHelper.lerp(tickDelta * VibeCheck.audioTickDelta, prevScale, currentScale);
     }
 
     @Override
     public float getCurrentScale() {
         setCurrentScale();
-        return currentScale;
+
+        if (prevScale <= 1.001f) {
+            prevScale = 1.0f;
+        }
+
+        return prevScale;
     }
 
     @Override

@@ -13,6 +13,9 @@ import java.time.Instant;
 
 public class VibeCheck implements VoicechatPlugin {
 
+    public static float AudioFPS = 18f;
+    public static float audioTickDelta = (AudioFPS / 50.0f);
+
     @Override
     public String getPluginId() {
         return "vibecheck";

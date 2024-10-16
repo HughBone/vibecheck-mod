@@ -43,16 +43,13 @@ public class MyConfig {
 
     // Goofy toggles
     @SerialEntry
-    public static boolean squash = false;
+    public static SquashAndStretchEnum squashAndStretch = SquashAndStretchEnum.DISABLED;
 
     @SerialEntry
-    public static boolean stretch = false;
+    public static boolean canada = false;
 
     @SerialEntry
-    public static boolean canada = true;
-
-    @SerialEntry
-    public static boolean chicken = true;
+    public static boolean chicken = false;
 
     // Getters methods for configuration settings
     public static Option<Boolean> getScaleHeadToSound() {
@@ -114,19 +111,12 @@ public class MyConfig {
                 .build();
     }
 
-    public static Option<Boolean> getSquash() {
-        return Option.<Boolean>createBuilder()
-                .name(Text.of("Squash"))
-                .binding(false, () -> MyConfig.squash, newVal -> MyConfig.squash = newVal)
-                .controller(TickBoxControllerBuilder::create)
-                .build();
-    }
-
-    public static Option<Boolean> getStretch() {
-        return Option.<Boolean>createBuilder()
-                .name(Text.of("Stretch"))
-                .binding(false, () -> MyConfig.stretch, newVal -> MyConfig.stretch = newVal)
-                .controller(TickBoxControllerBuilder::create)
+    public static Option<SquashAndStretchEnum> getSquashAndStretch() {
+        return Option.<SquashAndStretchEnum>createBuilder()
+                .name(Text.of("Squish mode:"))
+                .binding(SquashAndStretchEnum.DISABLED, () -> MyConfig.squashAndStretch, newVal -> MyConfig.squashAndStretch = newVal)
+                .controller(opt -> EnumControllerBuilder.create(opt)
+                        .enumClass(SquashAndStretchEnum.class))
                 .build();
     }
 
