@@ -10,6 +10,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
 
 import java.time.Instant;
+import java.util.UUID;
 
 public class VibeCheck implements VoicechatPlugin {
 
@@ -28,32 +29,37 @@ public class VibeCheck implements VoicechatPlugin {
 
     @Override
     public void registerEvents(EventRegistration registration) {
-        registration.registerEvent(ClientReceiveSoundEvent.EntitySound.class, this::clientReceiveSound);
+        registration.registerEvent(ClientReceiveSoundEvent.StaticSound.class, this::clientReceiveStaticSound);
+        registration.registerEvent(ClientReceiveSoundEvent.EntitySound.class, this::clientReceiveEntitySound);
         registration.registerEvent(ClientSoundEvent.class, this::clientSoundEvent);
     }
 
-    // Other players
-    public void clientReceiveSound(ClientReceiveSoundEvent.EntitySound event) {
+    public void receivePlayerAudio(short[] rawAudio, UUID playerId) {
         if (MinecraftClient.getInstance().world == null) return;
 
-        PlayerEntity player = MinecraftClient.getInstance().world.getPlayerByUuid(event.getId());
+        PlayerEntity player = playerId == null ? MinecraftClient.getInstance().player
+                : MinecraftClient.getInstance().world.getPlayerByUuid(playerId);
         if (player == null) return;
 
-        float audioLevel = calculateAudioLevel(event.getRawAudio());
-        if (audioLevel == 1.0D) return;
+        float audioLevel = calculateAudioLevel(rawAudio);
+        if (audioLevel == 1.0f) return;
 
         ((PlayerInterface) player).queueAdd(audioLevel, Instant.now().toEpochMilli() + 100);
     }
 
+    // Other players in group
+    public void clientReceiveStaticSound(ClientReceiveSoundEvent.StaticSound event) {
+        receivePlayerAudio(event.getRawAudio(), event.getId());
+    }
+
+    // Other players
+    public void clientReceiveEntitySound(ClientReceiveSoundEvent.EntitySound event) {
+        receivePlayerAudio(event.getRawAudio(), event.getId());
+    }
+
     // Client only
     public void clientSoundEvent(ClientSoundEvent event) {
-        PlayerEntity clientPlayer = MinecraftClient.getInstance().player;
-        if (clientPlayer == null) return;
-
-        float audioLevel = calculateAudioLevel(event.getRawAudio());
-        if (audioLevel == 1.0D) return;
-
-        ((PlayerInterface) clientPlayer).queueAdd(audioLevel, Instant.now().toEpochMilli() + 100);
+        receivePlayerAudio(event.getRawAudio(), null);
     }
 
     public float calculateAudioLevel(short[] samples) {
