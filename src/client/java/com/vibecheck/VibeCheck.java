@@ -36,7 +36,12 @@ public class VibeCheck implements VoicechatPlugin {
         // Audio from other players
         registration.registerEvent(ClientReceiveSoundEvent.EntitySound.class, event -> receivePlayerAudio(event.getRawAudio(), event.getId()));
         // Audio from client
-        registration.registerEvent(ClientSoundEvent.class, event -> receivePlayerAudio(event.getRawAudio(), null));
+        registration.registerEvent(ClientSoundEvent.class, event -> {
+            receivePlayerAudio(event.getRawAudio(), null);
+            if (!MyConfig.sendAudioPackets) {
+                event.cancel();
+            }
+        });
     }
 
     public void receivePlayerAudio(short[] rawAudio, UUID playerId) {

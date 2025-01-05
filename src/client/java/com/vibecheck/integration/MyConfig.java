@@ -51,6 +51,9 @@ public class MyConfig {
     @SerialEntry
     public static boolean chicken = false;
 
+    @SerialEntry
+    public static boolean sendAudioPackets = true;
+
     // Getters methods for configuration settings
     public static Option<Boolean> getScaleHeadToSound() {
         return Option.<Boolean>createBuilder()
@@ -132,6 +135,16 @@ public class MyConfig {
         return Option.<Boolean>createBuilder()
                 .name(Text.of("Chicken"))
                 .binding(false, () -> MyConfig.chicken, newVal -> MyConfig.chicken = newVal)
+                .controller(TickBoxControllerBuilder::create)
+                .build();
+    }
+
+    public static Option<Boolean> getSendPackets() {
+        return Option.<Boolean>createBuilder()
+                .name(Text.of("Send your audio packets"))
+                .binding(true, () -> MyConfig.sendAudioPackets, newVal -> {
+                    MyConfig.sendAudioPackets = newVal;
+                })
                 .controller(TickBoxControllerBuilder::create)
                 .build();
     }
