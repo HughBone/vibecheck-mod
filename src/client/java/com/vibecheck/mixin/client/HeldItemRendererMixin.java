@@ -34,12 +34,12 @@ public abstract class HeldItemRendererMixin {
                 break;
             case AnimationEnum.BOB_UP:
                 if (MyConfig.scaleMainHandToSound || MyConfig.scaleOffHandToSound) {
-                    matrices.translate(0, currentScale / 2, 0);
+                    matrices.translate(0, currentScale, 0);
                 }
                 break;
             case AnimationEnum.BOB_DOWN:
                 if (MyConfig.scaleMainHandToSound || MyConfig.scaleOffHandToSound) {
-                    matrices.translate(0, -currentScale / 2, 0);
+                    matrices.translate(0, -currentScale, 0);
                 }
                 break;
         }

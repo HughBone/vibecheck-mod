@@ -6,8 +6,6 @@ import de.maxhenkel.voicechat.api.VoicechatPlugin;
 import de.maxhenkel.voicechat.api.events.ClientReceiveSoundEvent;
 import de.maxhenkel.voicechat.api.events.ClientSoundEvent;
 import de.maxhenkel.voicechat.api.events.EventRegistration;
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import net.minecraft.entity.player.PlayerEntity;
@@ -15,11 +13,11 @@ import net.minecraft.entity.player.PlayerEntity;
 import java.util.HashMap;
 import java.util.UUID;
 
-public class VibeCheck implements VoicechatPlugin, ClientModInitializer {
+public class VibeCheck implements VoicechatPlugin {
 
-    public static int tickTracker = 0;
     public static HashMap<PlayerEntityRenderState, PlayerEntity> playerRenderMap = new HashMap<>();
-
+    public static float AudioFPS = 18f;
+    public static float audioTickDelta = (AudioFPS / 50.0f);
 
     @Override
     public String getPluginId() {
@@ -29,13 +27,6 @@ public class VibeCheck implements VoicechatPlugin, ClientModInitializer {
     @Override
     public void initialize(VoicechatApi api) {
         MyConfig.HANDLER.load();
-    }
-
-    @Override
-    public void onInitializeClient() {
-        ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            VibeCheck.tickTracker++;
-        });
     }
 
     @Override
@@ -79,7 +70,7 @@ public class VibeCheck implements VoicechatPlugin, ClientModInitializer {
         rms = 1.0D + ((sampleCount == 0) ? 0 : Math.sqrt(rms / sampleCount));
 
         // If the value is 1-ish, return as is.
-        if (rms <= 1.005f) {
+        if (rms <= 1.01f) {
             return 1.0f;
         }
 

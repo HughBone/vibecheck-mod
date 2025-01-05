@@ -1,6 +1,5 @@
 package com.vibecheck.mixin.client;
 
-import com.vibecheck.AudioHelper;
 import com.vibecheck.PlayerInterface;
 import com.vibecheck.VibeCheck;
 import net.minecraft.client.MinecraftClient;
@@ -9,128 +8,136 @@ import net.minecraft.util.math.MathHelper;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 
+import java.time.Instant;
+import java.util.LinkedList;
+import java.util.NoSuchElementException;
+import java.util.Queue;
+
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin implements PlayerInterface {
 
     @Unique
+    private Queue<Float> scaleQueue = new LinkedList<>();
+    @Unique
     private long resetScaleTime = Long.MAX_VALUE;
     @Unique
     private float currentScale = 1.0f;
+    @Unique
+    private float prevScale = 1.0f;
 
+    // Delay of 16 is about 60fps
+    @Unique
+    private static final float DELAY = 16.0f;
+    @Unique
+    private long prevRenderTime = 0;
     // Prevent removing from queue twice in one render for this player
     @Unique
-    private boolean waitNextFrame = false;
-
-    private int prevTick = -1;
-
-    //    @Unique
-//    private static long DELAY = 20;
+    private boolean lockScaleUpdate = false;
     @Unique
-    AudioHelper audio = new AudioHelper();
-    private long animationStartTime = -1;
-    private long animationEndTime = -1;
+    private boolean prevGoingUp = true;
 
     @Override
     public void clearLockRender() {
-        waitNextFrame = false;
+        lockScaleUpdate = false;
     }
 
     @Override
     public void setCurrentScale() {
-        if (waitNextFrame) {
+        if (lockScaleUpdate) {
             return;
         }
-        // Lock until next render frame
-        waitNextFrame = true;
 
-        if (audio.replaceMe) {
-            if (currentScale != 1.0f && System.currentTimeMillis() > this.resetScaleTime) {
-                if (currentScale > 1.0f) {
-                    currentScale -= 0.05f;
-                    if (currentScale < 1.0f) {
+        // IDK why i put this above the lock but im too scared to change it
+        if ((Instant.now().toEpochMilli() - prevRenderTime) < DELAY) {
+            float tickDelta = MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(true);
+            prevScale = MathHelper.lerp(tickDelta * VibeCheck.audioTickDelta, prevScale, currentScale);
+            return;
+        }
+
+        // Lock until next render frame
+        lockScaleUpdate = true;
+
+        if (scaleQueue.isEmpty()) {
+            if (currentScale != 1.0f) {
+                prevScale = currentScale;
+                prevRenderTime = Instant.now().toEpochMilli();
+                if (Instant.now().toEpochMilli() > this.resetScaleTime) {
+                    this.currentScale -= 0.05f;
+                    if (currentScale <= 1.0f) {
                         currentScale = 1.0f;
+                        prevGoingUp = true;
+                    }
+                } else if (prevGoingUp) {
+                    currentScale += 0.005f;
+                } else {
+                    currentScale -= 0.005f;
+                }
+            }
+        } else {
+            prevRenderTime = Instant.now().toEpochMilli();
+            float newScale;
+            try {
+                newScale = scaleQueue.remove();
+            } catch (NoSuchElementException e) {
+                System.out.println("Failed the vibe check - NoSuchElementException");
+                return;
+            }
+
+            prevScale = currentScale;
+
+            // Smooth scaling / fix jitteryness.
+            // limit small values and cap max value
+            float grewByValue = newScale - currentScale;
+            float absGrewVal = Math.abs(grewByValue);
+            if (absGrewVal > 0.02) {
+                if (absGrewVal > 0.15) {
+                    if (grewByValue > 0) {
+                        currentScale += 0.15f;
+                    } else {
+                        currentScale -= 0.15f;
                     }
                 } else {
-                    currentScale += 0.05f;
-                    if (currentScale > 1.0f) {
-                        currentScale = 1.0f;
-                    }
+                    currentScale = newScale;
                 }
-            }
-            return;
-        }
-
-        // Do a lil squash animation
-        if (audio.startSquashed) {
-            int tick = VibeCheck.tickTracker;
-            if (prevTick != tick) {
-                if (tick >= 5) {
-                    VibeCheck.tickTracker = 0;
-                }
-
-                float tickDelta = MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(true);
-
-                if (tick < 2) {
-                    // Squash for 2 ticks
-                    float progress = (tick + tickDelta) / 2;
-                    currentScale = MathHelper.lerp(progress, currentScale, 0.8f);
-                } else if (tick < 8) {
-                    // Stetch back out for 6 ticks
-                    float progress = (tick + tickDelta) / 6;
-                    currentScale = MathHelper.lerp(progress, currentScale, 1.1f);
-                    audio.startSquashed = false;
-                }
-
-                prevTick = tick;
-            }
-
-            return;
-        }
-
-        // Animation started
-        if (animationStartTime == -1) {
-            animationStartTime = System.currentTimeMillis();
-        }
-
-        long currentTime = System.currentTimeMillis();
-        animationEndTime = animationStartTime + audio.delay;
-        float elapsedTime = currentTime - animationStartTime;
-        float progress = 1.0f - (elapsedTime / (animationEndTime - animationStartTime));
-
-        // Animation is done
-        if (currentTime >= animationEndTime) {
-            animationStartTime = -1;
-            audio.replaceMe = true;
-            return;
-        }
-
-        // Smooth jittery scaling / cap value
-        float newScale = audio.scale;
-        float grewByValue = newScale - currentScale;
-        if (Math.abs(grewByValue) > 0.07) {
-            if (grewByValue > 0) {
-                newScale = currentScale + 0.07f;
+            } else if (prevGoingUp) {
+                currentScale += 0.005f;
             } else {
-                newScale = currentScale - 0.07f;
+                currentScale -= 0.005f;
             }
+
+            prevGoingUp = newScale > prevScale;
         }
 
-        currentScale = MathHelper.lerp(progress, currentScale, newScale);
+        float tickDelta = MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(true);
+        prevScale = MathHelper.lerp(tickDelta * VibeCheck.audioTickDelta, prevScale, currentScale);
     }
 
     @Override
     public float getCurrentScale() {
         setCurrentScale();
-        return currentScale;
+
+        if (prevScale <= 1.001f) {
+            prevScale = 1.0f;
+        }
+
+        return prevScale;
     }
 
     @Override
     public void queueAdd(float audioScale) {
-        if (audio.replaceMe || (Math.abs(audio.scale - audioScale)) > 0.01f) {
-            long currentTime = System.currentTimeMillis();
-            audio.scale = audioScale;
-            audio.updateTimeSinceLastAudio(currentTime);
-            this.resetScaleTime = currentTime + 75;
+        this.resetScaleTime = Instant.now().toEpochMilli() + 100;
+
+        if (scaleQueue.size() < 3) {
+            scaleQueue.add(audioScale);
+        } else {
+            // Framerate too slow! Clear queue and start at new scale
+            try {
+                scaleQueue.clear();
+                scaleQueue.add(audioScale);
+            } catch (Exception e) {
+                System.out.println("Failed the vibe check - NoSuchElementException PART 2");
+            }
         }
     }
+
 }
