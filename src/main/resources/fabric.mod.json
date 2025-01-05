@@ -15,6 +15,9 @@
 	"icon": "assets/vibecheck/icon.png",
 	"environment": "*",
 	"entrypoints": {
+		"client": [
+			"com.vibecheck.VibeCheck"
+		],
 		"voicechat": [
           "com.vibecheck.VibeCheck"
         ],
