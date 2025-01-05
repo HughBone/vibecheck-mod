@@ -47,8 +47,10 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
             return;
         }
 
+        long currentTime = Instant.now().toEpochMilli();
+
         // IDK why i put this above the lock but im too scared to change it
-        if ((Instant.now().toEpochMilli() - prevRenderTime) < DELAY) {
+        if ((currentTime - prevRenderTime) < DELAY) {
             float tickDelta = MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(true);
             prevScale = MathHelper.lerp(tickDelta * VibeCheck.audioTickDelta, prevScale, currentScale);
             return;
@@ -60,8 +62,8 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
         if (scaleQueue.isEmpty()) {
             if (currentScale != 1.0f) {
                 prevScale = currentScale;
-                prevRenderTime = Instant.now().toEpochMilli();
-                if (Instant.now().toEpochMilli() > this.resetScaleTime) {
+                prevRenderTime = currentTime;
+                if (currentTime > this.resetScaleTime) {
                     this.currentScale -= 0.05f;
                     if (currentScale <= 1.0f) {
                         currentScale = 1.0f;
@@ -74,11 +76,11 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
                 }
             }
         } else {
-            prevRenderTime = Instant.now().toEpochMilli();
+            prevRenderTime = currentTime;
             float newScale;
             try {
                 newScale = scaleQueue.remove();
-            } catch (NoSuchElementException e) {
+            } catch (Exception e) {
                 System.out.println("Failed the vibe check - NoSuchElementException");
                 return;
             }
