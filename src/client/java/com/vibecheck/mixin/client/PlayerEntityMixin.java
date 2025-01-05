@@ -23,8 +23,6 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
 
     private int prevTick = -1;
 
-    private boolean itWentUp = false;
-
     //    @Unique
 //    private static long DELAY = 20;
     @Unique
@@ -47,13 +45,7 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
 
         if (audio.replaceMe) {
             if (currentScale != 1.0f && System.currentTimeMillis() > this.resetScaleTime) {
-                if (itWentUp) {
-                    if (currentScale > 0.8f) {
-                        currentScale -= 0.05f;
-                    } else {
-                        itWentUp = false;
-                    }
-                } else if (currentScale > 1.0f) {
+                if (currentScale > 1.0f) {
                     currentScale -= 0.05f;
                     if (currentScale < 1.0f) {
                         currentScale = 1.0f;
