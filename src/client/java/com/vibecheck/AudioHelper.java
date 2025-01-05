@@ -11,7 +11,7 @@ public class AudioHelper {
     // Update delay based on how long it took to receive the last audio packet
     public void updateTimeSinceLastAudio(long currentTime) {
         long newDelay = currentTime - timeSinceLastAudio;
-        if (newDelay > 500) {
+        if (newDelay > 250) {
             startSquashed = true;
         }
 

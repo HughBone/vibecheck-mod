@@ -9,13 +9,16 @@ import de.maxhenkel.voicechat.api.events.EventRegistration;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.render.entity.state.PlayerEntityRenderState;
 import net.minecraft.entity.player.PlayerEntity;
 
+import java.util.HashMap;
 import java.util.UUID;
 
 public class VibeCheck implements VoicechatPlugin, ClientModInitializer {
 
     public static int tickTracker = 0;
+    public static HashMap<PlayerEntityRenderState, PlayerEntity> playerRenderMap = new HashMap<>();
 
 
     @Override

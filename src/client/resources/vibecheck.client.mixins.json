@@ -3,10 +3,11 @@
   "package": "com.vibecheck.mixin.client",
   "compatibilityLevel": "JAVA_21",
   "client": [
-    "BipedEntityModelMixin",
+    "EntityRenderDispatcherMixin",
     "HeldItemRendererMixin",
     "MinecraftClientMixin",
     "PlayerEntityMixin",
+    "PlayerEntityModelMixin",
     "PlayerEntityRendererMixin"
   ],
   "injectors": {

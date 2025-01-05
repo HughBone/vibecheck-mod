@@ -71,11 +71,13 @@ public abstract class PlayerEntityMixin implements PlayerInterface {
                 float tickDelta = MinecraftClient.getInstance().getRenderTickCounter().getTickDelta(true);
 
                 if (tick < 2) {
+                    // Squash for 2 ticks
                     float progress = (tick + tickDelta) / 2;
                     currentScale = MathHelper.lerp(progress, currentScale, 0.8f);
                 } else if (tick < 8) {
+                    // Stetch back out for 6 ticks
                     float progress = (tick + tickDelta) / 6;
-                    currentScale = MathHelper.lerp(progress, currentScale, 1.05f);
+                    currentScale = MathHelper.lerp(progress, currentScale, 1.1f);
                     audio.startSquashed = false;
                 }
 
